@@ -1,0 +1,62 @@
+#!/bin/bash
+# =============================================================================
+# canary-check.sh — Tripwire canary token checker
+# =============================================================================
+# Checks if any planted fake files were accessed, modified, or deleted.
+# If triggered: IMMEDIATE critical alert — someone is poking around.
+# =============================================================================
+
+set -euo pipefail
+
+ENV_FILE="/root/.openclaw/.env"
+[ -f "$ENV_FILE" ] && set -a && source "$ENV_FILE" && set +a
+
+CANARY_STATE="/var/lib/orca/canary/checksums"
+CANARY_LOG="/var/log/orca/canary.log"
+TELEGRAM_BOT="${OPS_ALERTS_BOT_TOKEN:-}"
+TELEGRAM_CHAT="${ALERTS_TELEGRAM_CHAT:--5206059645}"
+
+mkdir -p /var/log/orca
+
+[ ! -f "$CANARY_STATE" ] && exit 0
+
+TRIGGERED=()
+
+while IFS='|' read -r orig_hash path planted_at; do
+    [ -z "$path" ] && continue
+
+    if [ ! -f "$path" ]; then
+        TRIGGERED+=("🗑️ DELETED: $path")
+        continue
+    fi
+
+    current_hash=$(sha256sum "$path" 2>/dev/null | awk '{print $1}')
+    if [ "$current_hash" != "$orig_hash" ]; then
+        TRIGGERED+=("✏️ MODIFIED: $path")
+    fi
+done < "$CANARY_STATE"
+
+if [ ${#TRIGGERED[@]} -gt 0 ]; then
+    MSG="🚨🐦 CANARY ALERT — Potential Intrusion!
+
+Someone touched files that should NEVER be accessed.
+This could indicate an active breach.
+
+"
+    for t in "${TRIGGERED[@]}"; do
+        MSG="${MSG}${t}
+"
+    done
+    MSG="${MSG}
+⚠️ Investigate immediately."
+
+    echo "[$(date -Iseconds)] $MSG" >> "$CANARY_LOG"
+
+    # Send critical alert
+    if [ -n "$TELEGRAM_BOT" ]; then
+        curl -s --max-time 10 -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT}" \
+            --data-urlencode "text=${MSG}" > /dev/null
+    fi
+fi
