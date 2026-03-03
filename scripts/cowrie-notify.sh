@@ -219,6 +219,32 @@ if [ -n "$MSG_BODY" ]; then
 ${MSG_BODY}"
 fi
 
+# ── Block repeat honeypot abusers from Cowrie itself ─────────────────────────
+# IPs with 5+ successful honeypot logins get dropped on port 22 via iptables
+# This stops them generating more score noise
+COWRIE_BLOCKED=$(python3 - "${ORCA_DB:-${HOME:-/root}/.orca/threat-db.json}" <<'PYEOF' 2>/dev/null
+import sys, json
+db_path = sys.argv[1]
+try:
+    with open(db_path) as f: db = json.load(f)
+except: db = {}
+for ip, rec in db.items():
+    et = rec.get('event_types', {})
+    if et.get('login_success', 0) >= 5:
+        print(ip)
+PYEOF
+)
+
+IPTABLES="/usr/sbin/iptables"
+COWRIE_BAN_LOG="/root/.openclaw/workspace/agents/ops/logs/cowrie-port22-bans.log"
+for ip in $COWRIE_BLOCKED; do
+    # Check if already blocked on port 22 specifically
+    if ! $IPTABLES -C INPUT -s "$ip" -p tcp --dport 22 -j DROP 2>/dev/null; then
+        $IPTABLES -I INPUT 1 -s "$ip" -p tcp --dport 22 -j DROP 2>/dev/null || true
+        echo "[$(date -Iseconds)] COWRIE-BLOCKED: $ip (5+ honeypot logins)" >> "$COWRIE_BAN_LOG"
+    fi
+done
+
 # ── ORCA post-batch: cluster detection + geo anomaly checks ───────────────────
 orca_post_batch 2>/dev/null || true
 
