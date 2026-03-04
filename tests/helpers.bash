@@ -8,6 +8,7 @@ WATCHCLAW_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WATCHCLAW_LIB="${WATCHCLAW_REPO_ROOT}/lib/watchclaw-lib.sh"
 WATCHCLAW_INSTALL="${WATCHCLAW_REPO_ROOT}/install.sh"
 WATCHCLAW_MODULES_DIR="${WATCHCLAW_REPO_ROOT}/modules"
+WATCHCLAW_SCRIPTS_DIR="${WATCHCLAW_REPO_ROOT}/scripts"
 
 # ── Setup / Teardown ──────────────────────────────────────────────────────────
 
