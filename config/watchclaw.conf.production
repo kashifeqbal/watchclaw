@@ -1,0 +1,124 @@
+# =============================================================================
+# WatchClaw — Production Profile
+# =============================================================================
+# Everything enabled: all modules, multi-channel alerts (Telegram + Slack +
+# Discord + webhook), threat feed import/export, cross-node sync.
+#
+# Good for: production infrastructure where security matters and you want
+# maximum visibility with real-time threat sharing across your fleet.
+# =============================================================================
+
+# ── SSH Hardening ────────────────────────────────────────────────────────────
+SSH_PORT=22222
+SSH_ALLOW_USERS="root deploy ops"
+SSH_DISABLE_PASSWORD=true
+
+# ── Cowrie Honeypot ──────────────────────────────────────────────────────────
+COWRIE_ENABLE=true
+COWRIE_USER="cowrie"
+
+# ── Firewall (UFW) ──────────────────────────────────────────────────────────
+UFW_ENABLE=true
+UFW_EXTRA_ALLOW="80/tcp 443/tcp"
+# UFW_RATE_LIMIT_PORTS="8080/tcp"   # Rate-limit internal app ports if exposed
+
+# ── Fail2ban ─────────────────────────────────────────────────────────────────
+F2B_ENABLE=true
+F2B_BANTIME=-1         # Permanent bans — no second chances in prod
+F2B_MAXRETRY=2         # Tight: only 2 failures before ban
+F2B_FINDTIME=300       # 5-minute window
+
+# ── Scoring & Ban Policy ─────────────────────────────────────────────────────
+BAN_THRESHOLD_SHORT=20           # Lower threshold — ban earlier in prod
+BAN_THRESHOLD_LONG=60
+BAN_THRESHOLD_PERMANENT=120
+HONEYPOT_LOGIN_INSTANT_BAN=true
+CRITICAL_REQUIRES_HARD_SIGNAL=true
+
+# Recon scoring — tighter in prod
+RECON_SCORE=3
+RECON_CAP_30M=30
+
+# ── Kernel Hardening ─────────────────────────────────────────────────────────
+KERNEL_HARDEN=true
+DISABLE_IPV6=false     # Set true if you've confirmed no IPv6 usage
+
+# ── Canary Tokens ────────────────────────────────────────────────────────────
+CANARY_ENABLE=true
+CANARY_PATHS=(
+    "/root/.ssh/id_rsa_canary"
+    "/etc/shadow.bak"
+    "/root/.bitcoin/wallet.dat"
+    "/var/www/.env"
+    "/root/.aws/credentials_backup"
+    "/home/deploy/.bash_history_backup"
+    "/etc/watchclaw/.env.canary"
+)
+
+# ── Alerts — all channels ────────────────────────────────────────────────────
+# Telegram — primary ops channel
+ALERT_TELEGRAM_TOKEN=""          # Bot token from @BotFather
+ALERT_TELEGRAM_CHAT=""           # Ops group chat ID
+
+# Slack — #security-alerts channel
+ALERT_SLACK_WEBHOOK=""           # Slack incoming webhook
+
+# Discord — security channel
+ALERT_DISCORD_WEBHOOK=""         # Discord webhook URL
+
+# Webhook — SIEM, PagerDuty, or custom endpoint
+ALERT_WEBHOOK_URL=""             # Any HTTP endpoint that accepts POST JSON
+ALERT_WEBHOOK_HEADERS=""         # e.g. "Authorization: Bearer <token>"
+
+# Rate limiting — tighter in prod for faster response
+ALERT_RATE_LIMIT=120             # At most 1 similar alert per 2 minutes
+ALERT_BATCH_INTERVAL=900         # Batch non-critical: every 15 minutes
+
+# ── AbuseIPDB Reputation Enrichment ─────────────────────────────────────────
+# Optional: enriches threat data with external reputation scores.
+# Free tier: 1000 lookups/day.
+# ABUSEIPDB_API_KEY=""
+
+# ── Threat Feed Import ───────────────────────────────────────────────────────
+THREAT_FEEDS=(
+    "https://lists.blocklist.de/lists/ssh.txt"
+    "https://lists.blocklist.de/lists/all.txt"
+    "https://raw.githubusercontent.com/stamparm/ipsum/master/levels/3.txt"
+    "https://feodotracker.abuse.ch/downloads/ipblocklist.txt"
+)
+THREAT_FEED_REFRESH=43200        # Refresh every 12 hours in prod
+
+# ── Threat Feed Export ───────────────────────────────────────────────────────
+EXPORT_ENABLE=true
+EXPORT_FORMAT="both"                      # Export both JSON and plaintext
+EXPORT_PATH="/var/lib/watchclaw/export"
+EXPORT_GITHUB_REPO=""                     # "yourorg/watchclaw-threats" to publish
+EXPORT_GITHUB_BRANCH="main"
+EXPORT_MIN_SCORE=25
+
+# ── Cross-Node Sync ──────────────────────────────────────────────────────────
+# Required: all nodes need push access to SYNC_REPO.
+# Create a private Git repo and add a deploy key to each server.
+
+SYNC_ENABLE=true
+SYNC_METHOD="git"
+SYNC_REPO=""                              # git@github.com:yourorg/fleet-threats.git
+SYNC_BRANCH="main"
+SYNC_INTERVAL=600                         # Sync every 10 minutes in prod
+SYNC_NODE_ID=""                           # Set explicitly: "prod-01", "prod-02", etc.
+
+# ── Monitoring Schedule — tighter intervals for prod ─────────────────────────
+CRON_NOTIFY_INTERVAL="*/5 * * * *"        # Process cowrie events every 5 minutes
+CRON_AUTOBAN_INTERVAL="*/5 * * * *"       # Enforce bans every 5 minutes
+CRON_POSTURE_INTERVAL="*/15 * * * *"      # Security check every 15 minutes
+CRON_HEALTHCHECK_INTERVAL="*/15 * * * *"  # Health check every 15 minutes
+CRON_WEEKLY_REPORT="0 8 * * 1"           # Weekly report Monday 8am
+CRON_FEED_IMPORT="0 */4 * * *"           # Import feeds every 4 hours
+CRON_EXPORT="0 */4 * * *"               # Export blocklist every 4 hours
+CRON_SYNC="*/10 * * * *"                # Cross-node sync every 10 minutes
+
+# ── OpenClaw Integration ─────────────────────────────────────────────────────
+# Uncomment if running alongside an OpenClaw agent for AI-powered analysis.
+# OPENCLAW_ENABLE=true
+# OPENCLAW_AGENT_ID="ops"
+# OPENCLAW_RPC_SOCKET="/var/run/openclaw/rpc.sock"

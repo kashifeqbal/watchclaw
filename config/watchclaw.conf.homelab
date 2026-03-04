@@ -1,0 +1,68 @@
+# =============================================================================
+# WatchClaw — Homelab Profile
+# =============================================================================
+# Minimal setup: SSH hardening, basic firewall, fail2ban, honeypot.
+# Telegram alerts. No cross-node sync.
+#
+# Good for: a single VPS or homelab server you want protected without
+# a lot of moving parts.
+# =============================================================================
+
+# ── General ──────────────────────────────────────────────────────────────────
+# WATCHCLAW_DIR="/var/lib/watchclaw"
+# WATCHCLAW_LOG="/var/log/watchclaw/watchclaw.log"
+
+# ── SSH Hardening ────────────────────────────────────────────────────────────
+SSH_PORT=2222
+SSH_ALLOW_USERS="root"
+SSH_DISABLE_PASSWORD=true
+
+# ── Cowrie Honeypot ──────────────────────────────────────────────────────────
+COWRIE_ENABLE=true
+
+# ── Firewall (UFW) ──────────────────────────────────────────────────────────
+UFW_ENABLE=true
+# Uncomment and set if you run a web server:
+# UFW_EXTRA_ALLOW="80/tcp 443/tcp"
+
+# ── Fail2ban ─────────────────────────────────────────────────────────────────
+F2B_ENABLE=true
+F2B_BANTIME=86400     # 24h ban (not permanent — more forgiving for homelab)
+F2B_MAXRETRY=5        # 5 attempts — slightly lenient
+F2B_FINDTIME=600
+
+# ── Scoring & Ban Policy ─────────────────────────────────────────────────────
+BAN_THRESHOLD_SHORT=25
+BAN_THRESHOLD_LONG=75
+BAN_THRESHOLD_PERMANENT=150
+HONEYPOT_LOGIN_INSTANT_BAN=true
+
+# ── Kernel Hardening ─────────────────────────────────────────────────────────
+KERNEL_HARDEN=true
+DISABLE_IPV6=false
+
+# ── Canary Tokens ────────────────────────────────────────────────────────────
+CANARY_ENABLE=false    # Optional for homelab — enable if you want tripwires
+
+# ── Alerts — Telegram only ───────────────────────────────────────────────────
+# Set these to get notified on ELEVATED+ security events.
+ALERT_TELEGRAM_TOKEN=""          # Get from @BotFather
+ALERT_TELEGRAM_CHAT=""           # Your personal or group chat ID
+
+ALERT_RATE_LIMIT=300             # At most 1 similar alert per 5 minutes
+ALERT_BATCH_INTERVAL=3600        # Batch minor alerts, send once per hour
+
+# ── Threat Feeds ─────────────────────────────────────────────────────────────
+# Leave empty to skip feed imports (fine for homelab)
+THREAT_FEEDS=()
+
+# ── Sync — disabled ──────────────────────────────────────────────────────────
+SYNC_ENABLE=false
+
+# ── Schedule ─────────────────────────────────────────────────────────────────
+# Defaults are fine for homelab
+CRON_NOTIFY_INTERVAL="*/15 * * * *"
+CRON_AUTOBAN_INTERVAL="*/15 * * * *"
+CRON_POSTURE_INTERVAL="*/30 * * * *"
+CRON_HEALTHCHECK_INTERVAL="*/30 * * * *"
+CRON_WEEKLY_REPORT="0 9 * * 1"

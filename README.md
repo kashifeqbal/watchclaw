@@ -1,5 +1,9 @@
 # 🐋 WatchClaw — Open Runtime Containment & Analysis
 
+[![CI](https://github.com/kashifeqbal/watchclaw/actions/workflows/ci.yml/badge.svg)](https://github.com/kashifeqbal/watchclaw/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](CHANGELOG.md)
+
 **One-command security hardening + threat intelligence for any Linux server.**
 
 WatchClaw turns a naked VPS into a hardened, self-defending machine with real-time threat scoring, automated banning, honeypot deception, and cross-node threat sharing — in under 10 minutes.
@@ -161,6 +165,44 @@ THREAT_FEEDS=(
     "https://lists.blocklist.de/lists/ssh.txt"
 )
 ```
+
+## Example Security Report
+
+This is what `watchclaw status` looks like on a real server:
+
+```
+SYSTEM HEALTH: OK
+SECURITY STATUS: LOW
+Risk Meaning: Normal background noise
+Action Right Now: No action needed
+
+Active Threat Score (last 30m): 23.0
+Top Offender (last 30m): 64.227.183.210 (18.0 in 30m)
+Highest Lifetime Offender: 167.99.46.101 (1388.0 lifetime)
+Repeat Offenders: none
+
+Simple Summary:
+- Is system healthy? OK
+- Is security risky? LOW (Normal background noise)
+- Do I need to act now? No action needed
+```
+
+LOW = normal. Bots are always scanning. WatchClaw watches, scores, and bans automatically. You only get alerted when something actually needs your attention.
+
+---
+
+## Documentation
+
+| Document | What's in it |
+|----------|-------------|
+| [docs/INSTALL.md](docs/INSTALL.md) | Full install guide: quick install, manual, verification, upgrading, uninstalling |
+| [docs/MODULES.md](docs/MODULES.md) | Every module explained: what it does, config options, how to verify |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Every config option, what it does, examples for common setups |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues: service won't start, alerts not sending, false positives |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, adding modules, PR guidelines |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
+
+---
 
 ## Requirements
 

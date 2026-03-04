@@ -1,0 +1,89 @@
+# =============================================================================
+# WatchClaw — Startup Profile
+# =============================================================================
+# Full hardening: all modules on, Slack alerts, basic threat feed import,
+# and git-based cross-node sync for a small fleet.
+#
+# Good for: a startup running 2–5 servers (prod + staging, or a small fleet)
+# that needs real security without a dedicated security team.
+# =============================================================================
+
+# ── SSH Hardening ────────────────────────────────────────────────────────────
+SSH_PORT=22022
+SSH_ALLOW_USERS="root deploy"
+SSH_DISABLE_PASSWORD=true
+
+# ── Cowrie Honeypot ──────────────────────────────────────────────────────────
+COWRIE_ENABLE=true
+COWRIE_USER="cowrie"
+
+# ── Firewall (UFW) ──────────────────────────────────────────────────────────
+UFW_ENABLE=true
+UFW_EXTRA_ALLOW="80/tcp 443/tcp"    # Web traffic
+# UFW_EXTRA_ALLOW="80/tcp 443/tcp 8080/tcp"  # Add app ports as needed
+
+# ── Fail2ban ─────────────────────────────────────────────────────────────────
+F2B_ENABLE=true
+F2B_BANTIME=-1        # Permanent bans
+F2B_MAXRETRY=3
+F2B_FINDTIME=600
+
+# ── Scoring & Ban Policy ─────────────────────────────────────────────────────
+BAN_THRESHOLD_SHORT=25
+BAN_THRESHOLD_LONG=75
+BAN_THRESHOLD_PERMANENT=150
+HONEYPOT_LOGIN_INSTANT_BAN=true
+CRITICAL_REQUIRES_HARD_SIGNAL=true
+
+# ── Kernel Hardening ─────────────────────────────────────────────────────────
+KERNEL_HARDEN=true
+DISABLE_IPV6=false
+
+# ── Canary Tokens ────────────────────────────────────────────────────────────
+CANARY_ENABLE=true
+CANARY_PATHS=(
+    "/root/.ssh/id_rsa_canary"
+    "/etc/shadow.bak"
+    "/root/.bitcoin/wallet.dat"
+    "/var/www/.env"
+    "/root/.aws/credentials_backup"
+)
+
+# ── Alerts — Slack (primary) + Telegram (backup) ─────────────────────────────
+ALERT_SLACK_WEBHOOK=""           # Slack incoming webhook URL → #security channel
+ALERT_TELEGRAM_TOKEN=""          # Backup: Telegram bot token
+ALERT_TELEGRAM_CHAT=""           # Backup: Telegram chat ID
+
+ALERT_RATE_LIMIT=300
+ALERT_BATCH_INTERVAL=1800        # Send batch alerts every 30 minutes
+
+# ── Threat Feed Import ───────────────────────────────────────────────────────
+THREAT_FEEDS=(
+    "https://lists.blocklist.de/lists/ssh.txt"
+    "https://raw.githubusercontent.com/stamparm/ipsum/master/levels/3.txt"
+)
+THREAT_FEED_REFRESH=86400        # Refresh every 24h
+
+# ── Threat Feed Export ───────────────────────────────────────────────────────
+EXPORT_ENABLE=false              # Enable if you want to share your blocklist
+EXPORT_FORMAT="json"
+EXPORT_MIN_SCORE=50              # Only export higher-confidence IPs
+
+# ── Cross-Node Sync ──────────────────────────────────────────────────────────
+# Uncomment and configure to share threat intel across your fleet.
+# All nodes need push access to the same private Git repo.
+
+SYNC_ENABLE=false                # Set to true once repo is configured
+# SYNC_METHOD="git"
+# SYNC_REPO="git@github.com:yourorg/watchclaw-fleet.git"
+# SYNC_BRANCH="main"
+# SYNC_INTERVAL=900              # Sync every 15 minutes
+# SYNC_NODE_ID=""                # Leave empty to auto-generate from hostname
+
+# ── Schedule ─────────────────────────────────────────────────────────────────
+CRON_NOTIFY_INTERVAL="*/10 * * * *"    # Process events every 10 minutes
+CRON_AUTOBAN_INTERVAL="*/10 * * * *"   # Enforce bans every 10 minutes
+CRON_POSTURE_INTERVAL="*/30 * * * *"
+CRON_HEALTHCHECK_INTERVAL="*/30 * * * *"
+CRON_WEEKLY_REPORT="0 9 * * 1"         # Weekly report Monday 9am
+CRON_FEED_IMPORT="0 */6 * * *"         # Import feeds every 6 hours
