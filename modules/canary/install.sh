@@ -91,6 +91,14 @@ ALERT_FUNC="/opt/watchclaw/lib/watchclaw-alert.sh"
 
 [ ! -f "${CANARY_STATE}/checksums" ] && exit 0
 
+# Guard: skip check if baseline was just created (< 120s ago)
+# Prevents false positives if cron fires immediately after install
+_state_age=$(( $(date +%s) - $(stat -c %Y "${CANARY_STATE}/checksums" 2>/dev/null || echo 0) ))
+if [ "$_state_age" -lt 120 ]; then
+    echo "[$(date -Iseconds)] Skipping — baseline just created (${_state_age}s ago)"
+    exit 0
+fi
+
 TRIGGERED=()
 while IFS='|' read -r path orig_hash planted_at; do
     [ -z "$path" ] && continue
