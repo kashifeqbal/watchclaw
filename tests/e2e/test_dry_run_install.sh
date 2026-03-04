@@ -75,7 +75,11 @@ for dir in /opt/watchclaw /var/lib/watchclaw /var/log/watchclaw; do
     fi
 done
 
-# ── 5. Verify no real CLI binary was created ─────────────────────────────────
+# ── 5. Verify dry-run did not (re)create the CLI binary ──────────────────────
+# Remove any CLI from prior tests so we can check if dry-run creates it
+rm -f /usr/local/bin/watchclaw 2>/dev/null || true
+# Re-run dry-run and check
+(cd "$REPO_ROOT" && bash install.sh --dry-run >/dev/null 2>&1) || true
 if [ -f /usr/local/bin/watchclaw ]; then
     fail "CLI binary /usr/local/bin/watchclaw was created (should not be in --dry-run)"
 else
