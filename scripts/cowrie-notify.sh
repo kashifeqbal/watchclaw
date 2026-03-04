@@ -161,7 +161,8 @@ threat_update_baseline "$TOTAL_EVENTS"
 
 # ── Safety net: direct scan for high-priority events ────────────────────────
 # Independent of PARSE_OUTPUT — guarantees login.success always alerts
-CRITICAL_ALERTS=$(echo "$NEW_LINES" | python3 - <<'PYEOF' 2>/dev/null
+_SAFETY_PY=$(mktemp /tmp/orca-safety-XXXXXX.py)
+cat > "$_SAFETY_PY" <<'PYEOF'
 import sys, json
 lines = []
 for raw in sys.stdin:
@@ -186,7 +187,8 @@ for raw in sys.stdin:
         pass
 print('\n'.join(lines))
 PYEOF
-)
+CRITICAL_ALERTS=$(echo "$NEW_LINES" | python3 "$_SAFETY_PY" 2>/dev/null)
+rm -f "$_SAFETY_PY"
 
 # ── Build Telegram message ────────────────────────────────────────────────────
 MSG_BODY=""
