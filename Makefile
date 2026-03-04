@@ -1,4 +1,4 @@
-.PHONY: all lint check test
+.PHONY: all lint check test e2e docker-build
 
 SCRIPT_DIRS := lib scripts modules
 
@@ -33,5 +33,11 @@ test: ## run bats tests from tests/ (skips if no .bats files found)
 		echo "No .bats test files found in tests/ — skipping."; \
 	fi
 
+docker-build: ## build the e2e test Docker image (watchclaw-e2e:latest)
+	docker build -f tests/Dockerfile.e2e -t watchclaw-e2e:latest .
+
+e2e: docker-build ## build Docker image and run all e2e tests
+	docker run --rm --name watchclaw-e2e watchclaw-e2e:latest
+
 help: ## show this help
-	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-10s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-12s %s\n", $$1, $$2}'

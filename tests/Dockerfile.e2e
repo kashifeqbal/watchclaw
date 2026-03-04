@@ -1,0 +1,62 @@
+FROM ubuntu:24.04
+
+# ── Non-interactive installs ──────────────────────────────────────────────────
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=C.UTF-8
+
+# ── System deps: Python 3, curl, git, sudo, jq, bats ─────────────────────────
+RUN apt-get update -q && \
+    apt-get install -y --no-install-recommends \
+        python3 python3-pip \
+        curl git sudo jq bats bash \
+        ca-certificates && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ── Mock Cowrie (avoids slow install; real module is integration-tested elsewhere)
+# We drop a minimal fake `cowrie` binary so module scripts that check for it
+# don't error out, and a fake systemd unit so systemctl calls are no-ops.
+RUN printf '#!/bin/bash\necho "cowrie mock: $*"\n' > /usr/local/bin/cowrie && \
+    chmod +x /usr/local/bin/cowrie && \
+    # Also mock systemctl so scripts that call it don't crash
+    printf '#!/bin/bash\necho "[mock-systemctl] $*"\nexit 0\n' > /usr/local/bin/systemctl && \
+    chmod +x /usr/local/bin/systemctl && \
+    # Mock ufw so firewall calls are no-ops
+    printf '#!/bin/bash\necho "[mock-ufw] $*"\nexit 0\n' > /usr/sbin/ufw && \
+    chmod +x /usr/sbin/ufw && \
+    # Mock fail2ban-client
+    printf '#!/bin/bash\necho "[mock-fail2ban-client] $*"\nexit 0\n' > /usr/bin/fail2ban-client && \
+    chmod +x /usr/bin/fail2ban-client
+
+# ── Copy the repo into the container ─────────────────────────────────────────
+WORKDIR /watchclaw
+COPY . .
+
+# ── Make all test scripts executable ─────────────────────────────────────────
+RUN chmod +x tests/e2e/*.sh 2>/dev/null || true && \
+    chmod +x install.sh scripts/*.sh lib/*.sh modules/*/install.sh 2>/dev/null || true
+
+# ── Smoke-test: dry-run install must exit 0 ───────────────────────────────────
+# Pre-create /etc/watchclaw so load_config's cp doesn't fail before --dry-run kicks in.
+# (Runs as root inside the container, which satisfies the preflight root check)
+RUN mkdir -p /etc/watchclaw && \
+    echo "=== Smoke: install.sh --dry-run ===" && \
+    bash install.sh --dry-run 2>&1 | tee /tmp/dryrun-smoke.log && \
+    echo "--- dry-run smoke passed ---"
+
+# ── Default: run all e2e test scripts ────────────────────────────────────────
+CMD ["bash", "-c", "\
+  overall=0; \
+  for script in /watchclaw/tests/e2e/test_*.sh; do \
+    echo ''; \
+    echo \"=== Running: $script ===\"; \
+    if bash \"$script\"; then \
+      echo \"PASS: $script\"; \
+    else \
+      echo \"FAIL: $script\"; \
+      overall=1; \
+    fi; \
+  done; \
+  echo ''; \
+  [ $overall -eq 0 ] && echo '=== All e2e tests PASSED ===' || echo '=== Some e2e tests FAILED ==='; \
+  exit $overall \
+"]

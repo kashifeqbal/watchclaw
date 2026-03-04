@@ -74,3 +74,24 @@ jobs:
           else
             echo "No .bats test files found in tests/ — skipping."
           fi
+
+  e2e:
+    name: E2E Tests (Docker)
+    runs-on: ubuntu-latest
+    # Only run on pushes to main — e2e is too slow for every PR
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build e2e Docker image
+        run: |
+          docker build \
+            -f tests/Dockerfile.e2e \
+            -t watchclaw-e2e:ci \
+            .
+
+      - name: Run e2e tests inside Docker
+        run: |
+          docker run --rm \
+            --name watchclaw-e2e-run \
+            watchclaw-e2e:ci
