@@ -1,3 +1,4 @@
+# DEPRECATED — merged into cowrie-autoban.sh (2026-03-06)
 #!/bin/bash
 # WatchClaw — https://github.com/kashifeqbal/watchclaw
 # =============================================================================

@@ -134,4 +134,3 @@ OPENCLAW_RPC_SOCKET=""                 # Path to OpenClaw RPC socket
 # CRON_DB_MAINTENANCE="0 3 * * *"     # DB prune + decay (default: daily 3am)
 # CRON_WEEKLY_REPORT="0 2 * * 0"      # Weekly report (default: Sunday 2am)
 # CRON_COWRIE_AUTOBAN="0 */4 * * *"   # Cowrie auto-ban (default: every 4h)
-# CRON_COWRIE_NOTIFY="0 1,9,17 * * *" # Cowrie notifier (default: 3x/day)

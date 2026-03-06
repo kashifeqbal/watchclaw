@@ -244,7 +244,6 @@ install_crons() {
         echo "    watchclaw-weekly-report.sh  Sunday 02:00"
         if $cowrie_enabled; then
             echo "    cowrie-autoban.sh           every 4 hours  (cowrie module active)"
-            echo "    cowrie-notify.sh            every 8 hours  (cowrie module active)"
         fi
         return 0
     fi
@@ -277,8 +276,6 @@ EOF
 # Cowrie auto-ban — every 4 hours (cowrie module active)
 ${CRON_COWRIE_AUTOBAN:-0 */4 * * *}  root ${WATCHCLAW_INSTALL_DIR}/scripts/cowrie-autoban.sh >> ${WATCHCLAW_LOG_DIR}/autoban.log 2>&1
 
-# Cowrie event notifier — every 8 hours (cowrie module active)
-${CRON_COWRIE_NOTIFY:-0 1,9,17 * * *}  root ${WATCHCLAW_INSTALL_DIR}/scripts/cowrie-notify.sh >> ${WATCHCLAW_LOG_DIR}/notify.log 2>&1
 EOF
         log "Cowrie cron entries added (cowrie module detected)"
     fi
