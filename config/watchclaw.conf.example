@@ -124,3 +124,14 @@ CRON_SYNC="*/15 * * * *"              # Cross-node sync
 OPENCLAW_ENABLE=false
 OPENCLAW_AGENT_ID="ops"
 OPENCLAW_RPC_SOCKET=""                 # Path to OpenClaw RPC socket
+
+# ── Cron schedule overrides ──────────────────────────────────────────────────
+# Override any schedule in /etc/cron.d/watchclaw by setting these before
+# running install.sh. Uses standard cron(5) expressions.
+#
+# CRON_CANARY="*/5 * * * *"           # Canary check (default: every 5 min)
+# CRON_HEALTHCHECK="0 */6 * * *"      # Service healthcheck (default: every 6h)
+# CRON_DB_MAINTENANCE="0 3 * * *"     # DB prune + decay (default: daily 3am)
+# CRON_WEEKLY_REPORT="0 2 * * 0"      # Weekly report (default: Sunday 2am)
+# CRON_COWRIE_AUTOBAN="0 */4 * * *"   # Cowrie auto-ban (default: every 4h)
+# CRON_COWRIE_NOTIFY="0 1,9,17 * * *" # Cowrie notifier (default: 3x/day)

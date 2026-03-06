@@ -238,13 +238,13 @@ install_crons() {
 
     if $DRY_RUN; then
         echo "  [dry-run] Would write /etc/cron.d/watchclaw with:"
-        echo "    canary-check.sh        every 5 min"
-        echo "    security-posture.sh    every 30 min"
-        echo "    service-healthcheck.sh every 10 min"
+        echo "    canary-check.sh             every 5 min"
+        echo "    service-healthcheck.sh      every 6 hours"
+        echo "    watchclaw-db-maintenance    daily 03:00"
         echo "    watchclaw-weekly-report.sh  Sunday 02:00"
         if $cowrie_enabled; then
-            echo "    cowrie-autoban.sh      every 5 min  (cowrie module active)"
-            echo "    cowrie-notify.sh       every 5 min  (cowrie module active)"
+            echo "    cowrie-autoban.sh           every 4 hours  (cowrie module active)"
+            echo "    cowrie-notify.sh            every 8 hours  (cowrie module active)"
         fi
         return 0
     fi
@@ -253,31 +253,32 @@ install_crons() {
     cat > "$cron_file" << EOF
 # WatchClaw Security — automated monitoring
 # https://github.com/kashifeqbal/watchclaw
+# Intervals tuned for low overhead; override in watchclaw.conf if needed.
 SHELL=/bin/bash
 PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin
 WATCHCLAW_CONF=/etc/watchclaw/watchclaw.conf
 
-# Canary token integrity check — every 5 min
-*/5 * * * *  root ${WATCHCLAW_INSTALL_DIR}/scripts/canary-check.sh >> ${WATCHCLAW_LOG_DIR}/canary.log 2>&1
+# Canary token integrity check — every 5 min (fast, no network)
+${CRON_CANARY:-*/5 * * * *}  root ${WATCHCLAW_INSTALL_DIR}/scripts/canary-check.sh >> ${WATCHCLAW_LOG_DIR}/canary.log 2>&1
 
-# Security posture report — every 30 min
-*/30 * * * * root ${WATCHCLAW_INSTALL_DIR}/scripts/security-posture.sh >> ${WATCHCLAW_LOG_DIR}/posture.log 2>&1
+# Service health check — every 6 hours
+${CRON_HEALTHCHECK:-0 */6 * * *}  root ${WATCHCLAW_INSTALL_DIR}/scripts/service-healthcheck.sh >> ${WATCHCLAW_LOG_DIR}/health.log 2>&1
 
-# Service health check — every 10 min
-*/10 * * * * root ${WATCHCLAW_INSTALL_DIR}/scripts/service-healthcheck.sh >> ${WATCHCLAW_LOG_DIR}/health.log 2>&1
+# Threat DB maintenance (prune stale IPs, decay scores) — daily 03:00
+${CRON_DB_MAINTENANCE:-0 3 * * *}  root ${WATCHCLAW_INSTALL_DIR}/scripts/watchclaw-db-maintenance.sh >> ${WATCHCLAW_LOG_DIR}/db-maintenance.log 2>&1
 
 # Weekly summary report — Sunday 02:00
-0 2 * * 0    root ${WATCHCLAW_INSTALL_DIR}/scripts/watchclaw-weekly-report.sh >> ${WATCHCLAW_LOG_DIR}/weekly.log 2>&1
+${CRON_WEEKLY_REPORT:-0 2 * * 0}  root ${WATCHCLAW_INSTALL_DIR}/scripts/watchclaw-weekly-report.sh >> ${WATCHCLAW_LOG_DIR}/weekly.log 2>&1
 EOF
 
     if $cowrie_enabled; then
         cat >> "$cron_file" << EOF
 
-# Cowrie auto-ban — every 5 min (cowrie module active)
-*/5 * * * *  root ${WATCHCLAW_INSTALL_DIR}/scripts/cowrie-autoban.sh >> ${WATCHCLAW_LOG_DIR}/autoban.log 2>&1
+# Cowrie auto-ban — every 4 hours (cowrie module active)
+${CRON_COWRIE_AUTOBAN:-0 */4 * * *}  root ${WATCHCLAW_INSTALL_DIR}/scripts/cowrie-autoban.sh >> ${WATCHCLAW_LOG_DIR}/autoban.log 2>&1
 
-# Cowrie event notifier — every 5 min (cowrie module active)
-*/5 * * * *  root ${WATCHCLAW_INSTALL_DIR}/scripts/cowrie-notify.sh >> ${WATCHCLAW_LOG_DIR}/notify.log 2>&1
+# Cowrie event notifier — every 8 hours (cowrie module active)
+${CRON_COWRIE_NOTIFY:-0 1,9,17 * * *}  root ${WATCHCLAW_INSTALL_DIR}/scripts/cowrie-notify.sh >> ${WATCHCLAW_LOG_DIR}/notify.log 2>&1
 EOF
         log "Cowrie cron entries added (cowrie module detected)"
     fi
