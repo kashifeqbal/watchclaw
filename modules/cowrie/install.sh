@@ -10,15 +10,16 @@ set -euo pipefail
 source /etc/watchclaw/watchclaw.conf 2>/dev/null || true
 
 COWRIE_USER="${COWRIE_USER:-cowrie}"
-COWRIE_DIR="${COWRIE_DIR:-/home/${COWRIE_USER}/cowrie}"
+COWRIE_HOME="${COWRIE_HOME:-/home/${COWRIE_USER}}"
+COWRIE_DIR="${COWRIE_DIR:-${COWRIE_HOME}/cowrie}"
+COWRIE_ENV="${COWRIE_DIR}/cowrie-env"
 COWRIE_REPO="https://github.com/cowrie/cowrie.git"
 
 log()  { echo -e "\033[0;32m[WatchClaw:cowrie]\033[0m $*"; }
 warn() { echo -e "\033[0;33m[WARN]\033[0m $*"; }
 
-# Check if Cowrie already installed
-if [ -d "$COWRIE_DIR" ] && [ -f "${COWRIE_DIR}/bin/cowrie" ]; then
-    log "Cowrie already installed at ${COWRIE_DIR}"
+# Check if Cowrie already installed and running
+if [ -d "$COWRIE_DIR" ] && [ -f "${COWRIE_ENV}/bin/twistd" ]; then
     if systemctl is-active --quiet cowrie 2>/dev/null; then
         log "Cowrie is running ✅"
         exit 0
@@ -45,7 +46,7 @@ if [ ! -d "$COWRIE_DIR" ]; then
     log "Cloned Cowrie repo"
 fi
 
-# Setup virtualenv
+# Setup virtualenv and install deps
 cd "$COWRIE_DIR"
 if [ ! -d "cowrie-env" ]; then
     sudo -u "$COWRIE_USER" python3 -m virtualenv cowrie-env
@@ -71,25 +72,32 @@ chown "$COWRIE_USER:$COWRIE_USER" etc/cowrie.cfg.local
 log "Cowrie configured on port 22"
 
 # Authbind for port 22 (allows non-root to bind)
+mkdir -p /etc/authbind/byport
 touch /etc/authbind/byport/22
 chown "$COWRIE_USER:$COWRIE_USER" /etc/authbind/byport/22
 chmod 770 /etc/authbind/byport/22
 
-# Systemd service
+# Systemd service — uses twistd directly (Cowrie v2+ has no bin/cowrie)
 cat > /etc/systemd/system/cowrie.service << EOF
 [Unit]
 Description=Cowrie SSH Honeypot
 After=network.target
 
 [Service]
-Type=forking
+Type=simple
 User=${COWRIE_USER}
 Group=${COWRIE_USER}
-WorkingDirectory=${COWRIE_DIR}
-ExecStart=${COWRIE_DIR}/bin/cowrie start
-ExecStop=${COWRIE_DIR}/bin/cowrie stop
 Restart=on-failure
 RestartSec=10
+
+Environment=PYTHONPATH=${COWRIE_DIR}/src
+WorkingDirectory=${COWRIE_DIR}
+
+ExecStart=/usr/bin/authbind --deep ${COWRIE_ENV}/bin/twistd --umask 0022 --nodaemon --pidfile= -l - cowrie
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cowrie
 
 [Install]
 WantedBy=multi-user.target
