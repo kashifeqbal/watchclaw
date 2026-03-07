@@ -70,12 +70,12 @@ fi
 
 # Test config before restart
 if sshd -t 2>/dev/null; then
-    systemctl restart sshd
+    systemctl restart ssh 2>/dev/null || systemctl restart sshd 2>/dev/null || true
     log "sshd restarted on port ${SSH_PORT}"
 else
     err "sshd config test failed! Restoring backup."
     cp "$SSH_CONF_BACKUP" "$SSH_CONF"
-    systemctl restart sshd
+    systemctl restart ssh 2>/dev/null || systemctl restart sshd 2>/dev/null || true
     exit 1
 fi
 
