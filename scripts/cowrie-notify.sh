@@ -1,5 +1,5 @@
-# DEPRECATED — merged into cowrie-autoban.sh (2026-03-06)
 #!/bin/bash
+# DEPRECATED — merged into cowrie-autoban.sh (2026-03-06)
 # WatchClaw — https://github.com/kashifeqbal/watchclaw
 # =============================================================================
 # cowrie-notify.sh — Cowrie Honeypot Telegram Notifier + WatchClaw Threat Feeder
