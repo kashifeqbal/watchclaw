@@ -4,9 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](CHANGELOG.md)
 
-**One-command security hardening + threat intelligence for any Linux server.**
+**One-command security hardening + threat intelligence for supported Linux servers.**
 
-WatchClaw turns a naked VPS into a hardened, self-defending machine with real-time threat scoring, automated banning, honeypot deception, and cross-node threat sharing — in under 10 minutes.
+WatchClaw turns a new VPS into a hardened host with behavioural threat scoring, automated banning, honeypot deception and optional cross-node threat sharing.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kashifeqbal/watchclaw/main/install.sh | bash
@@ -37,7 +37,7 @@ curl -fsSL https://raw.githubusercontent.com/kashifeqbal/watchclaw/main/install.
 ```bash
 watchclaw install --standalone
 ```
-Pure bash. Cron-driven. No dependencies beyond Python 3, UFW, fail2ban. Works on any Debian/Ubuntu VPS.
+Shell-first and cron-driven, with Python 3, UFW and fail2ban as runtime dependencies. See the tested support boundary below.
 
 ### With OpenClaw Agents
 ```bash
@@ -87,7 +87,7 @@ watchclaw status
     │ │ cowrie       │ │  │ • Discord      │
     │ │ ssh-harden   │ │  │ • Slack        │
     │ │ ufw-baseline │ │  │ • Webhook      │
-    │ │ fail2ban     │ │  │ • Email        │
+    │ │ fail2ban     │ │  │                │
     │ │ kernel       │ │  └────────────────┘
     │ │ canary       │ │
     │ │ threat-feed  │ │  ┌────────────────┐
@@ -199,8 +199,10 @@ LOW = normal. Bots are always scanning. WatchClaw watches, scores, and bans auto
 | [docs/MODULES.md](docs/MODULES.md) | Every module explained: what it does, config options, how to verify |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Every config option, what it does, examples for common setups |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues: service won't start, alerts not sending, false positives |
+| [docs/RELEASE_VALIDATION.md](docs/RELEASE_VALIDATION.md) | v1.0 test gates, support boundary and explicit non-goals |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, adding modules, PR guidelines |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
+| [SECURITY.md](SECURITY.md) | Private vulnerability reporting and safe deployment guidance |
 
 ---
 
@@ -210,6 +212,8 @@ LOW = normal. Bots are always scanning. WatchClaw watches, scores, and bans auto
 - Python 3.8+
 - Root access
 - Public IP (for honeypot to be useful)
+
+Automated E2E validation currently runs on Ubuntu 24.04. Validate other supported distributions in a disposable environment before production rollout.
 
 ## Roadmap
 
@@ -225,8 +229,8 @@ LOW = normal. Bots are always scanning. WatchClaw watches, scores, and bans auto
 - [x] Canary token module
 - [x] AbuseIPDB / blocklist.de threat feed import
 - [x] Cross-node sync (Git-based)
-- [ ] Public blocklist export
-- [ ] Discord / Slack / webhook alerts
+- [x] Public blocklist export
+- [x] Discord / Slack / webhook alerts
 - [ ] Web dashboard (optional)
 - [ ] ARM/Raspberry Pi support
 - [ ] Ansible playbook alternative

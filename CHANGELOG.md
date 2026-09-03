@@ -10,7 +10,7 @@ Format: [Semantic Versioning](https://semver.org). Types: `Added`, `Changed`, `F
 
 ---
 
-## [1.0.0] — 2026-03-04
+## [1.0.0] — 2026-09-03
 
 First stable release. Born from running a $14 VPS and refusing to let bots win.
 
@@ -101,6 +101,13 @@ First stable release. Born from running a $14 VPS and refusing to let bots win.
 - `tests/helpers.bash`
 - `Makefile` with `lint`, `check`, `test` targets
 - GitHub Actions CI (`/.github/workflows/ci.yml`)
+- Adversarial alert-payload serialization tests
+
+**Security and release quality**
+- Safe JSON construction for Discord, Slack and generic webhook alerts; payload text is passed as data instead of interpolated into Python source
+- `SECURITY.md` with private vulnerability reporting and operational safety guidance
+- `docs/RELEASE_VALIDATION.md` with explicit CI gates, tested support boundary and v1.0 non-goals
+- README capability and roadmap reconciliation
 
 ---
 
